@@ -43,7 +43,7 @@ log = "0.4"
 
 # actix
 actix = "^0.5.1"
-actix-web = "^0.6"
+actix-web = { git = "https://github.com/aqatl/actix-web", branch = "0.6-hotfix" }
 
 [profile.release]
 lto = true
