@@ -37,7 +37,7 @@ where
     S: Session,
     SM: SessionManager<S>,
 {
-    type Context = HttpContext<Self, Addr<Syn, SM>>;
+    type Context = HttpContext<Self, Addr<SM>>;
 
     fn stopping(&mut self, ctx: &mut Self::Context) -> Running {
         self.release(ctx);
@@ -50,7 +50,7 @@ where
     S: Session,
     SM: SessionManager<S>,
 {
-    fn write(&self, s: &str, ctx: &mut HttpContext<Self, Addr<Syn, SM>>) {
+    fn write(&self, s: &str, ctx: &mut HttpContext<Self, Addr<SM>>) {
         ctx.write(format!(
             "/**/{}({});\r\n",
             self.callback,
@@ -114,7 +114,7 @@ where
     S: Session,
     SM: SessionManager<S>,
 {
-    pub fn init(req: HttpRequest<Addr<Syn, SM>>) -> Result<HttpResponse> {
+    pub fn init(req: HttpRequest<Addr<SM>>) -> Result<HttpResponse> {
         lazy_static! {
             static ref CHECK: Regex = Regex::new(r"^[a-zA-Z0-9_\.]+$").unwrap();
         }
@@ -181,7 +181,7 @@ where
 
 #[allow(non_snake_case)]
 pub fn JSONPollingSend<S, SM>(
-    req: HttpRequest<Addr<Syn, SM>>,
+    req: HttpRequest<Addr<SM>>,
 ) -> Either<HttpResponse, Box<Future<Item = HttpResponse, Error = Error>>>
 where
     S: Session,
@@ -199,7 +199,7 @@ where
 }
 
 pub fn read<S, SM>(
-    req: HttpRequest<Addr<Syn, SM>>,
+    req: HttpRequest<Addr<SM>>,
 ) -> Box<Future<Item = HttpResponse, Error = Error>>
 where
     S: Session,

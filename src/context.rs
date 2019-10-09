@@ -2,8 +2,8 @@ use std;
 use std::sync::Arc;
 use std::collections::VecDeque;
 
-use actix::dev::*;
-use actix::{ActorState, Message as ActixMessage};
+use actix::*;
+use actix::{Message as ActixMessage};
 
 use serde_json;
 use futures::{Async, Future, Poll, Stream};
@@ -13,6 +13,7 @@ use futures::sync::mpsc::{unbounded, UnboundedSender, UnboundedReceiver};
 use session::{Message, Session, CloseReason};
 use protocol::{CloseCode, Frame};
 use manager::{SockJSManager, Broadcast};
+use actix::dev::{ToEnvelope, Envelope};
 
 #[derive(Debug)]
 pub enum SockJSChannel {
@@ -48,12 +49,12 @@ impl BufItem {
 /// Sockjs session context
 pub struct SockJSContext<A> where A: Session, A::Context: AsyncContext<A>
 {
-    inner: ContextImpl<A>,
+    inner: Context<A>,
     sid: Arc<String>,
     rx: UnboundedReceiver<SockJSChannel>,
     tx: Option<UnboundedSender<ChannelItem>>,
     buf: VecDeque<BufItem>,
-    sm: Addr<Syn, SockJSManager<A>>,
+    sm: Addr<SockJSManager<A>>,
 }
 
 impl<A> ActorContext for SockJSContext<A> where A: Session<Context=Self>
@@ -100,20 +101,15 @@ impl<A> AsyncContext<A> for SockJSContext<A> where A: Session<Context=Self>
     }
 
     #[inline]
-    fn unsync_address(&mut self) -> Addr<Unsync, A> {
-        self.inner.unsync_address()
-    }
-
-    #[inline]
-    fn sync_address(&mut self) -> Addr<Syn, A> {
-        self.inner.sync_address()
+    fn address(&mut self) -> Addr<A> {
+        self.inner.address()
     }
 }
 
 impl<A> SockJSContext<A> where A: Session<Context=Self>
 {
     #[doc(hidden)]
-    pub fn recipient<M>(&mut self) -> Recipient<Unsync, M>
+    pub fn recipient<M>(&mut self) -> Recipient<M>
         where A: Handler<M>, M: ActixMessage + 'static
     {
         self.inner.unsync_address().recipient()
@@ -189,14 +185,14 @@ impl<A> SockJSContext<A> where A: Session<Context=Self>
 
 impl<A> SockJSContext<A> where A: Session<Context=Self>
 {
-    pub(crate) fn start(session: A, sid: Arc<String>, addr: Addr<Syn, SockJSManager<A>>)
-                        -> (Addr<Syn, A>, UnboundedSender<SockJSChannel>)
+    pub(crate) fn start(session: A, sid: Arc<String>, addr: Addr<SockJSManager<A>>)
+                        -> (Addr<A>, UnboundedSender<SockJSChannel>)
     {
         let (tx, rx) = unbounded();
 
         let mut ctx = SockJSContext {
             sid, rx,
-            inner: ContextImpl::new(Some(session)),
+            inner: Context::from(Some(session)),
             tx: None,
             buf: VecDeque::new(),
             sm: addr,
@@ -275,11 +271,11 @@ impl<A> Future for SockJSContext<A> where A: Session<Context=Self>
     }
 }
 
-impl<A, M> ToEnvelope<Syn, A, M> for SockJSContext<A>
+impl<A, M> ToEnvelope<A, M> for SockJSContext<A>
     where A: Session<Context=SockJSContext<A>> + Handler<M>,
           M: ActixMessage + Send + 'static, M::Result: Send,
 {
-    fn pack(msg: M, tx: Option<Sender<M::Result>>) -> SyncEnvelope<A> {
-        SyncEnvelope::new(msg, tx)
+    fn pack(msg: M, tx: Option<Sender<M::Result>>) -> Envelope<A> {
+        Envelope::new(msg, tx)
     }
 }

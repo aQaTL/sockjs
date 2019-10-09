@@ -29,14 +29,14 @@ pub struct EventSource<S, SM>
 impl<S, SM> EventSource<S, SM>
     where S: Session, SM: SessionManager<S>,
 {
-    fn hb(&self, ctx: &mut HttpContext<Self, Addr<Syn, SM>>) {
+    fn hb(&self, ctx: &mut HttpContext<Self, Addr<SM>>) {
         ctx.run_later(Duration::new(5, 0), |act, ctx| {
             act.send_heartbeat(ctx);
             act.hb(ctx);
         });
     }
 
-    pub fn init(req: HttpRequest<Addr<Syn, SM>>, maxsize: usize) -> Result<HttpResponse>
+    pub fn init(req: HttpRequest<Addr<SM>>, maxsize: usize) -> Result<HttpResponse>
     {
         let session = req.match_info().get("session").unwrap().to_owned();
         let mut resp = HttpResponse::Ok()
@@ -71,7 +71,7 @@ impl<S, SM> EventSource<S, SM>
 impl<S, SM> Actor for EventSource<S, SM>
     where S: Session, SM: SessionManager<S>
 {
-    type Context = HttpContext<Self, Addr<Syn, SM>>;
+    type Context = HttpContext<Self, Addr<SM>>;
 
     fn stopping(&mut self, ctx: &mut Self::Context) -> Running {
         self.release(ctx);

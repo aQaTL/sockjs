@@ -60,7 +60,7 @@ pub struct XhrStreaming<S, SM>
 
 impl<S, SM> XhrStreaming<S, SM> where S: Session, SM: SessionManager<S> {
 
-    pub fn init(req: HttpRequest<Addr<Syn, SM>>, maxsize: usize) -> Result<HttpResponse> {
+    pub fn init(req: HttpRequest<Addr<SM>>, maxsize: usize) -> Result<HttpResponse> {
         if *req.method() == Method::OPTIONS {
             return Ok(
                 HttpResponse::NoContent()
@@ -107,7 +107,7 @@ impl<S, SM> XhrStreaming<S, SM> where S: Session, SM: SessionManager<S> {
 impl<S, SM> Actor for XhrStreaming<S, SM>
     where S: Session, SM: SessionManager<S>
 {
-    type Context = HttpContext<Self, Addr<Syn, SM>>;
+    type Context = HttpContext<Self, Addr<SM>>;
 
     fn stopping(&mut self, ctx: &mut Self::Context) -> Running {
         self.release(ctx);

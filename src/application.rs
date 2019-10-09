@@ -3,9 +3,8 @@ use std::collections::HashSet;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-use actix::{Actor, Addr, Syn};
-use actix_web::dev::{AsyncResult, Handler, Resource};
-use actix_web::{HttpMessage, HttpRequest, HttpResponse};
+use actix::{Actor, Addr};
+use actix_web::*;
 use futures::future::Either;
 use http::{header, Method};
 use md5;
@@ -26,7 +25,7 @@ where
     A: Actor<Context = SockJSContext<A>> + Session,
     SM: SessionManager<A>,
 {
-    manager: Rc<Addr<Syn, SM>>,
+    manager: Rc<Addr<SM>>,
     act: PhantomData<A>,
     state: PhantomData<S>,
     rng: RefCell<ThreadRng>,
@@ -62,7 +61,7 @@ where
 {
     /// Create new sockjs application. Sockjs application requires
     /// Session manager's address.
-    pub fn new(manager: Addr<Syn, SM>) -> Self {
+    pub fn new(manager: Addr<SM>) -> Self {
         let html = protocol::IFRAME_HTML.to_owned();
         let digest = md5::compute(&html);
         let patterns: Vec<_> = PATTERNS
@@ -125,7 +124,7 @@ where
 {
     type Result = AsyncResult<HttpResponse>;
 
-    fn handle(&mut self, req: HttpRequest<S>) -> AsyncResult<HttpResponse> {
+    fn handle(&mut self, req: HttpRequest) -> AsyncResult<HttpResponse> {
         let idx = if let Some(path) = req.match_info().get("tail") {
             if path.is_empty() {
                 return HttpResponse::Ok()
@@ -137,7 +136,7 @@ where
             let mut i = None;
             let mut req2 = req.clone();
             for (idx, pattern) in self.patterns.iter().enumerate() {
-                if pattern.match_with_params(path, req2.match_info_mut()) {
+                if pattern.match_with_params(path, req2.match_info()) {
                     i = Some(idx)
                 }
             }

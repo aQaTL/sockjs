@@ -49,14 +49,14 @@ impl<S, SM> HTMLFile<S, SM>
     where S: Session, SM: SessionManager<S>,
 {
     // start heartbeats
-    fn hb(&self, ctx: &mut HttpContext<Self, Addr<Syn, SM>>) {
+    fn hb(&self, ctx: &mut HttpContext<Self, Addr<SM>>) {
         ctx.run_later(Duration::new(5, 0), |act, ctx| {
             act.send_heartbeat(ctx);
             act.hb(ctx);
         });
     }
 
-    fn write(&mut self, s: &str, ctx: &mut HttpContext<Self, Addr<Syn, SM>>) {
+    fn write(&mut self, s: &str, ctx: &mut HttpContext<Self, Addr<SM>>) {
         let b = serde_json::to_string(s).unwrap();
         self.size += b.len() + 25;
         ctx.write("<script>\np(");
@@ -64,7 +64,7 @@ impl<S, SM> HTMLFile<S, SM>
         ctx.write(");\n</script>\r\n");
     }
 
-    pub fn init(req: HttpRequest<Addr<Syn, SM>>, maxsize: usize) -> Result<HttpResponse> {
+    pub fn init(req: HttpRequest<Addr<SM>>, maxsize: usize) -> Result<HttpResponse> {
         lazy_static! {
             static ref CHECK: Regex = Regex::new(r"^[a-zA-Z0-9_\.]+$").unwrap();
         }
@@ -119,7 +119,7 @@ impl<S, SM> HTMLFile<S, SM>
 impl<S, SM> Actor for HTMLFile<S, SM>
     where S: Session, SM: SessionManager<S>
 {
-    type Context = HttpContext<Self, Addr<Syn, SM>>;
+    type Context = HttpContext<Self, Addr<SM>>;
 
     fn stopping(&mut self, ctx: &mut Self::Context) -> Running {
         self.release(ctx);

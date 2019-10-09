@@ -24,6 +24,7 @@ extern crate http;
 #[macro_use]
 extern crate actix;
 extern crate actix_web;
+extern crate actix_web_actors;
 
 mod context;
 mod application;

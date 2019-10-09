@@ -13,6 +13,7 @@ use session::Session;
 use manager::{Broadcast, Record, SessionManager};
 
 use super::{Transport, SendResult, Flags};
+use actix_web_actors::HttpContext;
 
 
 pub struct Xhr<S, SM>
@@ -28,7 +29,7 @@ pub struct Xhr<S, SM>
 impl<S, SM> Actor for Xhr<S, SM>
     where S: Session, SM: SessionManager<S>
 {
-    type Context = HttpContext<Self, Addr<Syn, SM>>;
+    type Context = HttpContext<Self, Addr<SM>>;
 
     fn stopping(&mut self, ctx: &mut Self::Context) -> Running {
         self.release(ctx);
@@ -95,7 +96,7 @@ impl<S, SM> Transport<S, SM> for Xhr<S, SM>
 impl<S, SM> Xhr<S, SM>
     where S: Session, SM: SessionManager<S>,
 {
-    pub fn init(req: HttpRequest<Addr<Syn, SM>>) -> Result<HttpResponse>
+    pub fn init(req: HttpRequest) -> Result<HttpResponse>
     {
         if *req.method() == Method::OPTIONS {
             return Ok(
@@ -120,7 +121,7 @@ impl<S, SM> Xhr<S, SM>
             .sockjs_cors_headers(req.headers())
             .take();
 
-        let mut ctx = HttpContext::from_request(req);
+        let mut ctx = HttpContext::from(req);
 
         // init transport
         let mut transport = Xhr{s: PhantomData,

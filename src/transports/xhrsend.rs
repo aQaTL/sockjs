@@ -15,7 +15,7 @@ use super::MAXSIZE;
 
 #[allow(non_snake_case)]
 pub fn XhrSend<S, SM>(
-    req: HttpRequest<Addr<Syn, SM>>,
+    req: HttpRequest<Addr<SM>>,
 ) -> Either<HttpResponse, Box<Future<Item = HttpResponse, Error = Error>>>
 where
     S: Session,
@@ -43,7 +43,7 @@ where
 }
 
 pub fn read<S, SM>(
-    req: HttpRequest<Addr<Syn, SM>>,
+    req: HttpRequest<Addr<SM>>,
 ) -> Box<Future<Item = HttpResponse, Error = Error>>
 where
     S: Session,
